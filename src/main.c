@@ -15,15 +15,20 @@
 typedef struct {
 	const char *file_path;
 	size_t line_number;
-} SearchContext;
+} SearchLocation;
 
 const char *pattern;
 size_t pattern_length;
 
-void search_line(const char *line) {
+void print_location(const SearchLocation *location) {
+	printf("%s:%zu: ", location->file_path, location->line_number);
+}
+
+void search_line(const SearchLocation *location, const char *line) {
 	const char *remaining = line;
 	const char *match     = strstr(remaining, pattern);
 	if (match != NULL) {
+		print_location(location);
 		if (pattern_length != 0 && isatty(STDOUT_FILENO)) {
 			do {
 				printf(
@@ -49,10 +54,16 @@ int search_file(const char *file_path) {
 		return -1;
 	}
 
+	SearchLocation location = {
+		.file_path   = file_path,
+		.line_number = 1,
+	};
+
 	char *line           = NULL;
 	size_t line_capacity = 0;
 	while (getline(&line, &line_capacity, file) != -1) {
-		search_line(line);
+		search_line(&location, line);
+		location.line_number++;
 	}
 
 	free(line);
