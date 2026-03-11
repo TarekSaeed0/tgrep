@@ -1,0 +1,14 @@
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  cert-*,
+  portability-*,
+  performance-*,
+  -clang-analyzer-cplusplus*,
+  -bugprone-easily-swappable-parameters,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+
+WarningsAsErrors: >
+  clang-analyzer-*,
+  bugprone-*,
+  cert-*
