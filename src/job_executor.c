@@ -1,3 +1,4 @@
+#include "job_queue.h"
 #include <job_executor.h>
 
 #include <assert.h>
@@ -16,7 +17,7 @@ bool job_executor_new(JobExecutor *executor, size_t worker_count) {
 	executor->worker_count = worker_count;
 	executor->job_queue    = job_queue_new();
 	pthread_mutex_init(&executor->mutex, NULL);
-	executor->stop = false;
+	executor->status = JOB_EXECUTOR_STATUS_RUNNING;
 
 	return true;
 }
@@ -27,11 +28,11 @@ void *job_executor_worker(void *data) {
 	while (true) {
 		pthread_mutex_lock(&executor->mutex);
 
-		while (job_queue_is_empty(&executor->job_queue) || executor->stop) {
-			pthread_cond_wait(&executor->jobs_available, &executor->mutex);
+		while (job_queue_is_empty(&executor->job_queue) && executor->status == JOB_EXECUTOR_STATUS_RUNNING) {
+			pthread_cond_wait(&executor->update, &executor->mutex);
 		}
 
-		if (executor->stop) {
+		if (job_queue_is_empty(&executor->job_queue)) {
 			break;
 		}
 
@@ -58,10 +59,6 @@ bool job_executor_start(JobExecutor *executor) {
 		}
 	}
 
-	for (size_t i = 0; i < executor->worker_count; i++) {
-		pthread_join(executor->workers[i], NULL);
-	}
-
 	return true;
 }
 void job_executor_stop(JobExecutor *executor) {
@@ -69,11 +66,18 @@ void job_executor_stop(JobExecutor *executor) {
 
 	pthread_mutex_lock(&executor->mutex);
 
-	executor->stop = true;
+	executor->status = JOB_EXECUTOR_STATUS_STOPPING;
 
-	pthread_cond_broadcast(&executor->jobs_available);
+	pthread_cond_broadcast(&executor->update);
 
 	pthread_mutex_unlock(&executor->mutex);
+
+	for (size_t i = 0; i < executor->worker_count; i++) {
+		pthread_join(executor->workers[i], NULL);
+	}
+}
+void job_executor_wait(JobExecutor *executor) {
+	assert(executor != NULL);
 
 	for (size_t i = 0; i < executor->worker_count; i++) {
 		pthread_join(executor->workers[i], NULL);
@@ -89,7 +93,7 @@ bool job_executor_submit(JobExecutor *executor, Job job) {
 		return false;
 	}
 
-	pthread_cond_broadcast(&executor->jobs_available);
+	pthread_cond_broadcast(&executor->update);
 
 	pthread_mutex_unlock(&executor->mutex);
 

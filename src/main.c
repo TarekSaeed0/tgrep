@@ -1,11 +1,14 @@
 #include <job_executor.h>
 
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #define MAXIMUM_JOB_DURATION (5 * 1000 * 1000)
+
+atomic_uint total_duration = 0;
 
 void work(void *data) {
 	long i = (long)data;
@@ -17,6 +20,8 @@ void work(void *data) {
 	usleep(duration);
 
 	printf("Finished job %ld\n", i);
+
+	atomic_fetch_add(&total_duration, duration);
 }
 
 int main(void) {
@@ -25,10 +30,12 @@ int main(void) {
 	JobExecutor executor;
 	job_executor_new(&executor, 5);
 
-	for (int i = 0; i < 100; i++) {
+	job_executor_start(&executor);
+
+	for (int i = 0; i < 10; i++) {
 		Job job = { .function = work, .data = (void *)(uintptr_t)i };
 		job_executor_submit(&executor, job);
 	}
 
-	job_executor_start(&executor);
+	job_executor_wait(&executor);
 }
