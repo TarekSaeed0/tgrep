@@ -9,7 +9,7 @@ project(
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_executable(tgrep src/main.c)
+add_executable(tgrep src/job_queue.c src/job_executor.c src/main.c)
 target_compile_options(
 	tgrep
 	PRIVATE -Werror
