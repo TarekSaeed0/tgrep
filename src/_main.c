@@ -12,7 +12,7 @@
 
 #define MAXIMUM_OPEN_DIRECTORIES (10)
 
-typedef struct {
+typedef struct SearchLocation {
 	const char *file_path;
 	size_t line_number;
 } SearchLocation;

@@ -1,8 +1,9 @@
 #ifndef JOB_H_INCLUDED
 #define JOB_H_INCLUDED
 
+struct JobExecutor;
 typedef struct Job {
-	void (*function)(void *);
+	void (*function)(struct JobExecutor *executor, void *data);
 	void *data;
 } Job;
 

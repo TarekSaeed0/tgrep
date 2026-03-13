@@ -7,6 +7,16 @@
 JobQueue job_queue_new(void) {
 	return (JobQueue){ .head = NULL, .tail = NULL };
 }
+void job_queue_drop(JobQueue *queue) {
+	assert(queue != NULL);
+
+	JobQueueNode *node = queue->head;
+	while (node != NULL) {
+		JobQueueNode *next = node->next;
+		free(node);
+		node = next;
+	}
+}
 bool job_queue_enqueue(JobQueue *queue, Job job) {
 	assert(queue != NULL);
 
