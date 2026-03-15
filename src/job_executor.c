@@ -1,3 +1,4 @@
+#include "job_queue.h"
 #include <job_executor.h>
 
 #include <assert.h>
@@ -134,7 +135,9 @@ bool job_executor_submit(JobExecutor *executor, Job job) {
 		return false;
 	}
 
-	pthread_cond_broadcast(&executor->update);
+	if (job_queue_is_empty(&executor->job_queue)) {
+		pthread_cond_signal(&executor->update);
+	}
 
 	pthread_mutex_unlock(&executor->mutex);
 
