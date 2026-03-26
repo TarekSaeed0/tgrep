@@ -130,12 +130,14 @@ bool job_executor_submit(JobExecutor *executor, Job job) {
 		return false;
 	}
 
+	bool was_empty = job_queue_is_empty(&executor->job_queue);
+
 	if (!job_queue_enqueue(&executor->job_queue, job)) {
 		pthread_mutex_unlock(&executor->mutex);
 		return false;
 	}
 
-	if (job_queue_is_empty(&executor->job_queue)) {
+	if (was_empty) {
 		pthread_cond_signal(&executor->update);
 	}
 

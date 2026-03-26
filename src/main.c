@@ -1,4 +1,5 @@
 #define _XOPEN_SOURCE 700 // NOLINT
+#include <errno.h>
 #include <ftw.h>
 #include <job_executor.h>
 #include <pthread.h>
@@ -13,8 +14,6 @@
 #define TEXT_STYLE_RESET "\033[0m"
 
 #define MAXIMUM_OPEN_DIRECTORIES (10)
-
-#define WORKER_COUNT (10)
 
 typedef struct SearchLocation {
 	const char *file_path;
@@ -123,6 +122,15 @@ int search_directory(const char *directory_path) {
 	return 0;
 }
 
+size_t get_worker_count(void) {
+	long core_count = sysconf(_SC_NPROCESSORS_ONLN);
+	if (core_count > 0) {
+		return (size_t)core_count;
+	}
+
+	return 1;
+}
+
 int main(int argc, char *argv[]) {
 	if (argc < 2 || 3 < argc) {
 		(void)fprintf(stderr, "Usage: tgrep PATTERN [PATH]\n");
@@ -151,7 +159,7 @@ int main(int argc, char *argv[]) {
 		struct timespec start, end;
 		clock_gettime(CLOCK_MONOTONIC, &start);
 
-		job_executor_new(&executor, WORKER_COUNT);
+		job_executor_new(&executor, get_worker_count());
 
 		search_directory(path);
 
